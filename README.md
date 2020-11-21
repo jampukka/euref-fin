@@ -1,2 +1,3 @@
 # euref-fin
-EUREF-FIN reprojections
+ETRSTM35FIN <-> EUREF-FIN Geodetic
+
