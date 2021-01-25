@@ -1,12 +1,12 @@
 import static java.lang.Math.*;
 
 /**
- * @see http://docs.jhs-suositukset.fi/jhs-suositukset/JHS197_liite2/JHS197_liite2.html
- * @see http://docs.jhs-suositukset.fi/jhs-suositukset/JHS197_liite3/JHS197_liite3.html
+ * @see https://www.suomidigi.fi/ohjeet-ja-tuki/jhs-suositukset/jhs-197-euref-fin-koordinaattijarjestelmat-niihin-liittyvat-muunnokset-ja-karttalehtijako
  */
 public class EUREFFIN {
 
     private static final double a = 6378137.0;
+    private static final double inv_a = 1.0 / 6378137.0;
     private static final double f = 1.0 / 298.257222101;
     private static final double e = sqrt(2 * f - (f * f));
 
@@ -34,14 +34,15 @@ public class EUREFFIN {
     private static final double epsilon = 1e-12;
 
     public static void toETRSTM35FIN(double lon, double lat, double[] out, int off) {
-        lat = toRadians(lat);
-        lon = toRadians(lon);
+        toETRSTM35FINrad(toRadians(lon), toRadians(lat), out, off);
+    }
 
-        double Q1 = asinh(tan(lat));
-        double Q2 = atanh(e * sin(lat));
+    private static void toETRSTM35FINrad(double lonRad, double latRad, double[] out, int off) {
+        double Q1 = asinh(tan(latRad));
+        double Q2 = atanh(e * sin(latRad));
         double Q = Q1 - (e * Q2);
 
-        double l = lon - l0;
+        double l = lonRad - l0;
         double B = atan(sinh(Q));
         double n_ = atanh(cos(B) * sin(l));
 
@@ -68,6 +69,12 @@ public class EUREFFIN {
     }
 
     public static void toETRSGeodetic(double E, double N, double[] out, int off) {
+        toETRSGeodeticRad(E, N, out, off);
+        out[off + 0] = toDegrees(out[off + 0]);
+        out[off + 1] = toDegrees(out[off + 1]);
+    }
+
+    private static void toETRSGeodeticRad(double E, double N, double[] out, int off) {
         double ks = N / (A1 * k0);
         double nn = (E - E0) / (A1 * k0);
 
@@ -95,31 +102,58 @@ public class EUREFFIN {
             double Q2 = Q + e * atanh(e * tanh(Q1));
             delta = Q2 - Q1;
             Q1 = Q2;
-        } while (Math.abs(delta) > epsilon);
+        } while (abs(delta) > epsilon);
 
         double lat = atan(sinh(Q1));
         double lon = l0 + l;
 
-        out[off + 0] = toDegrees(lon);
-        out[off + 1] = toDegrees(lat);
+        out[off + 0] = lon;
+        out[off + 1] = lat;
+    }
+
+    public static void etrs89ToWebMerc(double lon, double lat, double[] out, int off) {
+        etrs89ToWebMercRad(toRadians(lon), toRadians(lat), out, off);
+    }
+
+    private static void etrs89ToWebMercRad(double lonRad, double latRad, double[] out, int off) {
+        // Ignore differences between etrs89 and wgs84
+        out[off + 0] = lonRad * a;
+        out[off + 1] = log(tan(PI / 4.0 + latRad / 2.0)) * a;
+    }
+
+    public static void webMercToETRS89(double x, double y, double[] out, int off) {
+        // Ignore differences between etrs89 and wgs84
+        out[off + 0] = x * inv_a;
+        out[off + 1] = atan(exp(y * inv_a)) * 2 - PI / 2.0;
+    }
+
+    public static void tm35finToWebMerc(double E, double N, double[] out, int off) {
+        toETRSGeodeticRad(E, N, out, off);
+        etrs89ToWebMercRad(out[off], out[off + 1], out, off);
+    }
+
+    public static void webMercToTM35FIN(double x, double y, double[] out, int off) {
+        webMercToETRS89(x, y, out, off);
+        toETRSTM35FINrad(out[off], out[off + 1], out, off);
     }
 
     private static double asinh(double x) {
-        return Math.log(x + Math.sqrt(x*x + 1.0));
+        return log(x + sqrt(x*x + 1.0));
     }
 
     private static double sech(double x) {
-        return 1.0 / Math.cosh(x);
+        return 1.0 / cosh(x);
     }
 
     private static double atanh(double x) {
-        return 0.5 * Math.log((1.0 + x) / (1.0 - x));
+        return 0.5 * log((1.0 + x) / (1.0 - x));
     }
 
     public static void main(String[] args) {
-        double[] tmp = new double[2];
-        double E = 106256.35958;
-        double N = 6715706.37705;
+        final double[] tmp = new double[2];
+        final double E = 106256.35958;
+        final double N = 6715706.37705;
+
         toETRSGeodetic(E, N, tmp, 0);
         System.out.printf("%.7f %.7f%n", E, N);
         double lon = tmp[0];
@@ -128,6 +162,15 @@ public class EUREFFIN {
         System.out.printf("%.7f %.7f%n", lon, lat);
         double E_ = tmp[0];
         double N_ = tmp[1];
+        System.out.printf("%.7f %.7f%n", E_, N_);
+
+        tm35finToWebMerc(E, N, tmp, 0);
+        double x = tmp[0];
+        double y = tmp[1];
+        System.out.printf("%.7f %.7f%n", x, y);
+        webMercToTM35FIN(x, y, tmp, 0);
+        E_ = tmp[0];
+        N_ = tmp[1];
         System.out.printf("%.7f %.7f%n", E_, N_);
     }
 
