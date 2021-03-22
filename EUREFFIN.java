@@ -10,9 +10,9 @@ public class EUREFFIN {
     private static final double f = 1.0 / 298.257222101;
     private static final double e = sqrt(2 * f - (f * f));
 
-    private static final double k0 = 0.9996;
-    private static final double l0 = toRadians(27.0);
-    private static final double E0 = 500000.0;
+    private static final double k0_TM35FIN = 0.9996;
+    private static final double l0_TM35FIN = toRadians(27.0);
+    private static final double E0_TM35FIN = 500000.0;
 
     private static final double n = f / (2.0 - f);
     private static final double n2 = n * n;
@@ -33,11 +33,13 @@ public class EUREFFIN {
 
     private static final double epsilon = 1e-12;
 
-    public static void toETRSTM35FIN(double lon, double lat, double[] out, int off) {
-        toETRSTM35FINrad(toRadians(lon), toRadians(lat), out, off);
-    }
+    private static final double asinh(final double x) { return log(x + sqrt(x*x + 1.0)); }
 
-    private static void toETRSTM35FINrad(double lonRad, double latRad, double[] out, int off) {
+    private static final double sech(final double x) { return 1.0 / cosh(x); }
+
+    private static final double atanh(final double x) { return 0.5 * log((1.0 + x) / (1.0 - x)); }
+
+    private static void geoToPlaneRad(double lonRad, double latRad, double k0, double l0, double E0, double[] out, int off) {
         double Q1 = asinh(tan(latRad));
         double Q2 = atanh(e * sin(latRad));
         double Q = Q1 - (e * Q2);
@@ -68,13 +70,13 @@ public class EUREFFIN {
         out[off + 1] = N;
     }
 
-    public static void toETRSGeodetic(double E, double N, double[] out, int off) {
-        toETRSGeodeticRad(E, N, out, off);
+    private static void planeToGeo(double E, double N, double k0, double l0, double E0, double[] out, int off) {
+        planeToGeoRad(E, N, k0, l0, E0, out, off);
         out[off + 0] = toDegrees(out[off + 0]);
         out[off + 1] = toDegrees(out[off + 1]);
     }
 
-    private static void toETRSGeodeticRad(double E, double N, double[] out, int off) {
+    private static void planeToGeoRad(double E, double N, double k0, double l0, double E0, double[] out, int off) {
         double ks = N / (A1 * k0);
         double nn = (E - E0) / (A1 * k0);
 
@@ -111,42 +113,90 @@ public class EUREFFIN {
         out[off + 1] = lat;
     }
 
-    public static void etrs89ToWebMerc(double lon, double lat, double[] out, int off) {
-        etrs89ToWebMercRad(toRadians(lon), toRadians(lat), out, off);
+    public static void geoToTM35fin(double lon, double lat, double[] out, int off) {
+        geoToTM35finRad(toRadians(lon), toRadians(lat), out, off);
     }
 
-    private static void etrs89ToWebMercRad(double lonRad, double latRad, double[] out, int off) {
+    private static void geoToTM35finRad(double lonRad, double latRad, double[] out, int off) {
+        geoToPlaneRad(lonRad, latRad, k0_TM35FIN, l0_TM35FIN, E0_TM35FIN, out, off);
+    }
+
+    public static void tm35finToGeo(double E, double N, double[] out, int off) {
+        planeToGeo(E, N, k0_TM35FIN, l0_TM35FIN, E0_TM35FIN, out, off);
+    }
+
+    private static void tm35finToGeoRad(double E, double N, double[] out, int off) {
+        planeToGeoRad(E, N, k0_TM35FIN, l0_TM35FIN, E0_TM35FIN, out, off);
+    }
+
+    public static void geoToWebMerc(double lon, double lat, double[] out, int off) {
+        geoToWebMercRad(toRadians(lon), toRadians(lat), out, off);
+    }
+
+    private static void geoToWebMercRad(double lonRad, double latRad, double[] out, int off) {
         // Ignore differences between etrs89 and wgs84
         out[off + 0] = lonRad * a;
         out[off + 1] = log(tan(PI / 4.0 + latRad / 2.0)) * a;
     }
 
-    public static void webMercToETRS89(double x, double y, double[] out, int off) {
+    public static void webMercToGeo(double x, double y, double[] out, int off) {
         // Ignore differences between etrs89 and wgs84
         out[off + 0] = x * inv_a;
         out[off + 1] = atan(exp(y * inv_a)) * 2 - PI / 2.0;
     }
 
     public static void tm35finToWebMerc(double E, double N, double[] out, int off) {
-        toETRSGeodeticRad(E, N, out, off);
-        etrs89ToWebMercRad(out[off], out[off + 1], out, off);
+        tm35finToGeoRad(E, N, out, off);
+        geoToWebMercRad(out[off], out[off + 1], out, off);
     }
 
-    public static void webMercToTM35FIN(double x, double y, double[] out, int off) {
-        webMercToETRS89(x, y, out, off);
-        toETRSTM35FINrad(out[off], out[off + 1], out, off);
+    public static void webMercToTM35fin(double x, double y, double[] out, int off) {
+        webMercToGeo(x, y, out, off);
+        geoToTM35finRad(out[off], out[off + 1], out, off);
     }
 
-    private static double asinh(double x) {
-        return log(x + sqrt(x*x + 1.0));
+    public static void gkNNtoGeo(int nn, double E, double N, double[] out, int off) {
+        double k0 = 1.0;
+        double l0 = toRadians(nn);
+        double E0 = 1_000_000 * nn + 500_000;
+        planeToGeo(E, N, k0, l0, E0, out, off);
     }
 
-    private static double sech(double x) {
-        return 1.0 / cosh(x);
+    private static void gkNNtoGeoRad(int nn, double E, double N, double[] out, int off) {
+        double k0 = 1.0;
+        double l0 = toRadians(nn);
+        double E0 = 1_000_000 * nn + 500_000;
+        planeToGeoRad(E, N, k0, l0, E0, out, off);
     }
 
-    private static double atanh(double x) {
-        return 0.5 * log((1.0 + x) / (1.0 - x));
+    public static void geoToGKnn(int nn, double lon, double lat, double[] out, int off) {
+        geoToGKnnRad(nn, toRadians(lon), toRadians(lat), out, off);
+    }
+
+    private static void geoToGKnnRad(int nn, double lonRad, double latRad, double[] out, int off) {
+        double k0 = 1.0;
+        double l0 = toRadians(nn);
+        double E0 = 1_000_000 * nn + 500_000;
+        geoToPlaneRad(lonRad, latRad, k0, l0, E0, out, off);
+    }
+    
+    public static int tm35finToGKnn(double E, double N, double[] out, int off) {
+        tm35finToGeoRad(E, N, out, off);
+        double lonRad = out[off];
+        double latRad = out[off + 1];
+        int nn = (int) Math.round(toDegrees(lonRad));
+        geoToGKnnRad(nn, lonRad, latRad, out, off);
+        return nn;
+    }
+
+    public static void tm35finToGKnn(double E, double N, int nn, double[] out, int off) {
+        tm35finToGeoRad(E, N, out, off);
+        geoToGKnnRad(nn, out[off], out[off + 1], out, off);
+    }
+
+    public static void gkNNtoTM35fin(int nn, double E, double N, double[] out, int off) {
+        gkNNtoGeoRad(nn, E, N, out, off);
+        geoToTM35finRad(out[off], out[off + 1], out, off);
     }
 
     public static void main(String[] args) {
@@ -154,12 +204,13 @@ public class EUREFFIN {
         final double E = 106256.35958;
         final double N = 6715706.37705;
 
-        toETRSGeodetic(E, N, tmp, 0);
         System.out.printf("%.7f %.7f%n", E, N);
+
+        tm35finToGeo(E, N, tmp, 0);
         double lon = tmp[0];
         double lat = tmp[1];
-        toETRSTM35FIN(lon, lat, tmp, 0);
         System.out.printf("%.7f %.7f%n", lon, lat);
+        geoToTM35fin(lon, lat, tmp, 0);
         double E_ = tmp[0];
         double N_ = tmp[1];
         System.out.printf("%.7f %.7f%n", E_, N_);
@@ -168,7 +219,17 @@ public class EUREFFIN {
         double x = tmp[0];
         double y = tmp[1];
         System.out.printf("%.7f %.7f%n", x, y);
-        webMercToTM35FIN(x, y, tmp, 0);
+        webMercToTM35fin(x, y, tmp, 0);
+        E_ = tmp[0];
+        N_ = tmp[1];
+        System.out.printf("%.7f %.7f%n", E_, N_);
+
+        int nn;
+        nn = tm35finToGKnn(E, N, tmp, 0);
+        E_ = tmp[0];
+        N_ = tmp[1];
+        System.out.printf("%.7f %.7f%n", E_, N_);
+        gkNNtoTM35fin(nn, E_, N_, tmp, 0);
         E_ = tmp[0];
         N_ = tmp[1];
         System.out.printf("%.7f %.7f%n", E_, N_);
