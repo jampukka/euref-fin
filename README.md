@@ -16,3 +16,6 @@ ETRSTM35FIN (EPSG 3067) <-> EUREF-FIN Geodetic (EPSG:4258) <-> Web Mercator (EPS
                                                            <-> ETRS89 / GK30FIN
                                                            <-> ETRS89 / GK31FIN (EPSG:3885)
 ```
+
+## axis order
+Output is always in east,north / lon,lat / x,y order, you can swap it yourself if you want or need to.
