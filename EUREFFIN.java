@@ -39,7 +39,11 @@ public class EUREFFIN {
 
     private static final double atanh(final double x) { return 0.5 * log((1.0 + x) / (1.0 - x)); }
 
-    private static void geoToPlaneRad(double lonRad, double latRad, double k0, double l0, double E0, double[] out, int off) {
+    public static void geoToPlane(double lon, double lat, double k0, double l0, double E0, double[] out, int off) {
+        geoToPlaneRad(toRadians(lon), toRadians(lat), k0, l0, E0, out, off);
+    }
+
+    public static void geoToPlaneRad(double lonRad, double latRad, double k0, double l0, double E0, double[] out, int off) {
         double Q1 = asinh(tan(latRad));
         double Q2 = atanh(e * sin(latRad));
         double Q = Q1 - (e * Q2);
@@ -70,13 +74,13 @@ public class EUREFFIN {
         out[off + 1] = N;
     }
 
-    private static void planeToGeo(double E, double N, double k0, double l0, double E0, double[] out, int off) {
+    public static void planeToGeo(double E, double N, double k0, double l0, double E0, double[] out, int off) {
         planeToGeoRad(E, N, k0, l0, E0, out, off);
         out[off + 0] = toDegrees(out[off + 0]);
         out[off + 1] = toDegrees(out[off + 1]);
     }
 
-    private static void planeToGeoRad(double E, double N, double k0, double l0, double E0, double[] out, int off) {
+    public static void planeToGeoRad(double E, double N, double k0, double l0, double E0, double[] out, int off) {
         double ks = N / (A1 * k0);
         double nn = (E - E0) / (A1 * k0);
 
@@ -117,7 +121,7 @@ public class EUREFFIN {
         geoToTM35finRad(toRadians(lon), toRadians(lat), out, off);
     }
 
-    private static void geoToTM35finRad(double lonRad, double latRad, double[] out, int off) {
+    public static void geoToTM35finRad(double lonRad, double latRad, double[] out, int off) {
         geoToPlaneRad(lonRad, latRad, k0_TM35FIN, l0_TM35FIN, E0_TM35FIN, out, off);
     }
 
@@ -125,7 +129,7 @@ public class EUREFFIN {
         planeToGeo(E, N, k0_TM35FIN, l0_TM35FIN, E0_TM35FIN, out, off);
     }
 
-    private static void tm35finToGeoRad(double E, double N, double[] out, int off) {
+    public static void tm35finToGeoRad(double E, double N, double[] out, int off) {
         planeToGeoRad(E, N, k0_TM35FIN, l0_TM35FIN, E0_TM35FIN, out, off);
     }
 
@@ -133,7 +137,7 @@ public class EUREFFIN {
         geoToWebMercRad(toRadians(lon), toRadians(lat), out, off);
     }
 
-    private static void geoToWebMercRad(double lonRad, double latRad, double[] out, int off) {
+    public static void geoToWebMercRad(double lonRad, double latRad, double[] out, int off) {
         // Ignore differences between etrs89 and wgs84
         out[off + 0] = lonRad * a;
         out[off + 1] = log(tan(PI / 4.0 + latRad / 2.0)) * a;
@@ -162,7 +166,7 @@ public class EUREFFIN {
         planeToGeo(E, N, k0, l0, E0, out, off);
     }
 
-    private static void gkNNtoGeoRad(int nn, double E, double N, double[] out, int off) {
+    public static void gkNNtoGeoRad(int nn, double E, double N, double[] out, int off) {
         double k0 = 1.0;
         double l0 = toRadians(nn);
         double E0 = 1_000_000 * nn + 500_000;
@@ -173,7 +177,7 @@ public class EUREFFIN {
         geoToGKnnRad(nn, toRadians(lon), toRadians(lat), out, off);
     }
 
-    private static void geoToGKnnRad(int nn, double lonRad, double latRad, double[] out, int off) {
+    public static void geoToGKnnRad(int nn, double lonRad, double latRad, double[] out, int off) {
         double k0 = 1.0;
         double l0 = toRadians(nn);
         double E0 = 1_000_000 * nn + 500_000;
