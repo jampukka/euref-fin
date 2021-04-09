@@ -1,5 +1,7 @@
 import static java.lang.Math.*;
 
+import java.util.Locale;
+
 /**
  * @see https://www.suomidigi.fi/ohjeet-ja-tuki/jhs-suositukset/jhs-197-euref-fin-koordinaattijarjestelmat-niihin-liittyvat-muunnokset-ja-karttalehtijako
  */
@@ -10,9 +12,11 @@ public class EUREFFIN {
     private static final double f = 1.0 / 298.257222101;
     private static final double e = sqrt(2 * f - (f * f));
 
-    private static final double k0_TM35FIN = 0.9996;
-    private static final double l0_TM35FIN = toRadians(27.0);
-    private static final double E0_TM35FIN = 500000.0;
+    private static final double k0_TM = 0.9996;
+    private static final double l0_TM34 = toRadians(21.0);
+    private static final double l0_TM35 = toRadians(27.0);
+    private static final double l0_TM36 = toRadians(33.0);
+    private static final double E0_TM = 500000.0;
 
     private static final double n = f / (2.0 - f);
     private static final double n2 = n * n;
@@ -31,7 +35,7 @@ public class EUREFFIN {
     private static final double h3_ = (61.0 * n3 / 240.0) - (103.0 * n4 / 140.0);
     private static final double h4_ = (49561.0 * n4 / 161280.0);
 
-    private static final double epsilon = 1e-12;
+    private static final double epsilon = 1e-10;
 
     private static final double asinh(final double x) { return log(x + sqrt(x*x + 1.0)); }
 
@@ -122,15 +126,15 @@ public class EUREFFIN {
     }
 
     public static void geoToTM35finRad(double lonRad, double latRad, double[] out, int off) {
-        geoToPlaneRad(lonRad, latRad, k0_TM35FIN, l0_TM35FIN, E0_TM35FIN, out, off);
+        geoToPlaneRad(lonRad, latRad, k0_TM, l0_TM35, E0_TM, out, off);
     }
 
     public static void tm35finToGeo(double E, double N, double[] out, int off) {
-        planeToGeo(E, N, k0_TM35FIN, l0_TM35FIN, E0_TM35FIN, out, off);
+        planeToGeo(E, N, k0_TM, l0_TM35, E0_TM, out, off);
     }
 
     public static void tm35finToGeoRad(double E, double N, double[] out, int off) {
-        planeToGeoRad(E, N, k0_TM35FIN, l0_TM35FIN, E0_TM35FIN, out, off);
+        planeToGeoRad(E, N, k0_TM, l0_TM35, E0_TM, out, off);
     }
 
     public static void geoToWebMerc(double lon, double lat, double[] out, int off) {
@@ -203,40 +207,107 @@ public class EUREFFIN {
         geoToTM35finRad(out[off], out[off + 1], out, off);
     }
 
+    public static void tm35finToTM34(double E, double N, double[] out, int off) {
+        planeToGeoRad(E, N, k0_TM, l0_TM35, E0_TM, out, off);
+        geoToPlaneRad(out[off], out[off + 1], k0_TM, l0_TM34, E0_TM, out, off);
+    }
+
+    public static void tm34toTM35fin(double E, double N, double[] out, int off) {
+        planeToGeoRad(E, N, k0_TM, l0_TM34, E0_TM, out, off);
+        geoToPlaneRad(out[off], out[off + 1], k0_TM, l0_TM35, E0_TM, out, off);
+    }
+
+    public static void tm35finToTM35(double E, double N, double[] out, int off) {
+        out[off++] = E;
+        out[off++] = N;
+    }
+
+    public static void tm35toTM35fin(double E, double N, double[] out, int off) {
+        out[off++] = E;
+        out[off++] = N;
+    }
+
+    public static void tm35finToTM36(double E, double N, double[] out, int off) {
+        planeToGeoRad(E, N, k0_TM, l0_TM35, E0_TM, out, off);
+        geoToPlaneRad(out[off], out[off + 1], k0_TM, l0_TM36, E0_TM, out, off);
+    }
+
+    public static void tm36toTM35fin(double E, double N, double[] out, int off) {
+        planeToGeoRad(E, N, k0_TM, l0_TM36, E0_TM, out, off);
+        geoToPlaneRad(out[off], out[off + 1], k0_TM, l0_TM35, E0_TM, out, off);
+    }
+
     public static void main(String[] args) {
         final double[] tmp = new double[2];
         final double E = 106256.35958;
         final double N = 6715706.37705;
 
-        System.out.printf("%.7f %.7f%n", E, N);
-
+        System.out.println("ETRS89");
+        System.out.printf(Locale.US, "%.7f %.7f%n", E, N);
         tm35finToGeo(E, N, tmp, 0);
         double lon = tmp[0];
         double lat = tmp[1];
-        System.out.printf("%.7f %.7f%n", lon, lat);
+        System.out.printf(Locale.US, "%.7f %.7f%n", lon, lat);
         geoToTM35fin(lon, lat, tmp, 0);
         double E_ = tmp[0];
         double N_ = tmp[1];
-        System.out.printf("%.7f %.7f%n", E_, N_);
+        System.out.printf(Locale.US, "%.7f %.7f%n", E_, N_);
 
+        System.out.println("TM34");
+        System.out.printf(Locale.US, "%.7f %.7f%n", E, N);
+        tm35finToTM34(E, N, tmp, 0);
+        E_ = tmp[0];
+        N_ = tmp[1];
+        System.out.printf(Locale.US, "%.7f %.7f%n", E_, N_);
+        tm34toTM35fin(E_, N_, tmp, 0);
+        E_ = tmp[0];
+        N_ = tmp[1];
+        System.out.printf(Locale.US, "%.7f %.7f%n", E_, N_);
+
+        System.out.println("TM35");
+        System.out.printf(Locale.US, "%.7f %.7f%n", E, N);
+        tm35finToTM35(E, N, tmp, 0);
+        E_ = tmp[0];
+        N_ = tmp[1];
+        System.out.printf(Locale.US, "%.7f %.7f%n", E_, N_);
+        tm35toTM35fin(E_, N_, tmp, 0);
+        E_ = tmp[0];
+        N_ = tmp[1];
+        System.out.printf(Locale.US, "%.7f %.7f%n", E_, N_);
+
+        System.out.println("TM36");
+        System.out.printf(Locale.US, "%.7f %.7f%n", E, N);
+        tm35finToTM36(E, N, tmp, 0);
+        E_ = tmp[0];
+        N_ = tmp[1];
+        System.out.printf(Locale.US, "%.7f %.7f%n", E_, N_);
+        tm36toTM35fin(E_, N_, tmp, 0);
+        E_ = tmp[0];
+        N_ = tmp[1];
+        System.out.printf(Locale.US, "%.7f %.7f%n", E_, N_);
+
+        System.out.println("Web Mercator");
+        System.out.printf(Locale.US, "%.7f %.7f%n", E, N);
         tm35finToWebMerc(E, N, tmp, 0);
         double x = tmp[0];
         double y = tmp[1];
-        System.out.printf("%.7f %.7f%n", x, y);
+        System.out.printf(Locale.US, "%.7f %.7f%n", x, y);
         webMercToTM35fin(x, y, tmp, 0);
         E_ = tmp[0];
         N_ = tmp[1];
-        System.out.printf("%.7f %.7f%n", E_, N_);
+        System.out.printf(Locale.US, "%.7f %.7f%n", E_, N_);
 
         int nn;
         nn = tm35finToGKnn(E, N, tmp, 0);
+        System.out.println("GK" + nn);
+        System.out.printf(Locale.US, "%.7f %.7f%n", E, N);
         E_ = tmp[0];
         N_ = tmp[1];
-        System.out.printf("%.7f %.7f%n", E_, N_);
+        System.out.printf(Locale.US, "%.7f %.7f%n", E_, N_);
         gkNNtoTM35fin(nn, E_, N_, tmp, 0);
         E_ = tmp[0];
         N_ = tmp[1];
-        System.out.printf("%.7f %.7f%n", E_, N_);
+        System.out.printf(Locale.US, "%.7f %.7f%n", E_, N_);
     }
 
 }
