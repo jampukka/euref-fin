@@ -15,6 +15,9 @@ ETRSTM35FIN (EPSG 3067) <-> EUREF-FIN Geodetic (EPSG:4258) <-> Web Mercator (EPS
                                                            <-> ETRS89 / GK29FIN
                                                            <-> ETRS89 / GK30FIN
                                                            <-> ETRS89 / GK31FIN (EPSG:3885)
+                                                           <-> ETRS89 / UTM zone 34N (EPSG:3046)
+                                                           <-> ETRS89 / UTM zone 35N (EPSG:3047)
+                                                           <-> ETRS89 / UTM zone 36N (EPSG:3048)
 ```
 
 ## axis order
