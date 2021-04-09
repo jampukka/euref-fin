@@ -1,7 +1,7 @@
 # euref-fin
 
 ```
-ETRSTM35FIN (EPSG 3067) <-> EUREF-FIN Geodetic (EPSG:4258) <-> Web Mercator (EPSG:3857)
+ETRSTM35FIN (EPSG:3067) <-> EUREF-FIN Geodetic (EPSG:4258) <-> Web Mercator (EPSG:3857)
                                                            <-> ETRS89 / GK19FIN (EPSG:3873)
                                                            <-> ETRS89 / GK20FIN
                                                            <-> ETRS89 / GK21FIN
